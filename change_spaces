@@ -1,0 +1,12 @@
+/home/sasha/PycharmProjects/google_img/downloads
+
+убрать пробелы
+find /home/alter/PycharmProjects/image_class/dataset -type f | while read full; do name=${full##*/}; mv -- "${full}" "${full%/*}/${name// /_}"; done;
+
+/home/sasha/PycharmProjects/google_img/dataset
+mkdir result
+for file in *.jpg
+do
+  newname="`echo $file | sed 's/\.//'`"
+  mv "$file" "result/$newname"
+done
