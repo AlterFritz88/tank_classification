@@ -21,15 +21,15 @@ class SimplePreprocessor:
     def preprocess(self, image):
         return cv2.resize(image, (self.width, self.height), interpolation=self.inter)
 
-
+dataset_path = 'tankNotTank'
 
 data = []
 labels = []
 preproc = SimplePreprocessor(64,64)
 # grab the image paths and randomly shuffle them
-imagePaths = sorted(list(paths.list_images("dataset")))
+imagePaths = sorted(list(paths.list_images(dataset_path)))
 images_naturals = []
-list_labels = os.listdir(path="dataset")
+list_labels = os.listdir(path=dataset_path)
 print(list_labels)
 # loop over the input images
 label_dict ={}
@@ -60,7 +60,7 @@ classTotals = to_categorical(labels, num_classes=number_labels).sum(axis=0)
 classWeight = classTotals.max() / classTotals
 
 print(labels)
-with open('dict_labels', 'w') as file:
+with open('models/{0}_dict_labels'.format(dataset_path), 'w') as file:
     for key, value in label_dict.items():
         file.write(key + ' ' + str(value) + '\n')
 
@@ -138,12 +138,12 @@ model.add(Dropout(0.5))
 model.add(Dense(number_labels))
 model.add(Activation("softmax"))
 
-epochs = 100
+epochs = 40
 
-opt = SGD(lr=0.001, momentum=0.9, nesterov=True) #decay=0.003/epochs
-checpoint = ModelCheckpoint('models/image_test.h5f', monitor='val_loss', save_best_only=True, verbose=1)
+opt = SGD(lr=0.005, decay=0.005/epochs, momentum=0.9, nesterov=True) #decay=0.003/epochs
+checpoint = ModelCheckpoint('models/{0}_test.h5f'.format(dataset_path), monitor='val_loss', save_best_only=True, verbose=1)
 callbacks = [checpoint]
-model.compile(optimizer=opt, loss='categorical_crossentropy', metrics=['accuracy'])
+model.compile(optimizer=opt, loss='binary_crossentropy', metrics=['accuracy']) #loss='categorical_crossentropy'
 
 aug = ImageDataGenerator(rotation_range=5, width_shift_range=[-0.1, 0, +0.1],
 	height_shift_range=[-0.1, 0, +0.1], shear_range=0.2, zoom_range=0.2,
@@ -151,12 +151,12 @@ aug = ImageDataGenerator(rotation_range=5, width_shift_range=[-0.1, 0, +0.1],
 
 
 
-H = model.fit_generator(aug.flow(trainX, trainY, batch_size=128), validation_data=(testX, testY), steps_per_epoch=len(trainX) // 32, epochs=epochs, verbose=1, callbacks=callbacks, class_weight=classWeight)
+#H = model.fit_generator(aug.flow(trainX, trainY, batch_size=128), validation_data=(testX, testY), steps_per_epoch=len(trainX) // 32, epochs=epochs, verbose=1, callbacks=callbacks, class_weight=classWeight)
 
-#H = model.fit(trainX, trainY, epochs=epochs, validation_data=(testX, testY), verbose=1, batch_size=128, callbacks=callbacks, class_weight=classWeight)
-model = load_model('models/image_test.h5f')
-score, acc = model.evaluate(testX, testY, batch_size=164)
-print(score, acc)
+H = model.fit(trainX, trainY, epochs=epochs, validation_data=(testX, testY), verbose=1, batch_size=128, callbacks=callbacks, class_weight=classWeight)
+model = load_model('models/{0}_test.h5f'.format(dataset_path))
+#score, acc = model.evaluate(testX, testY, batch_size=164)
+#print(score, acc)
 
 prediction = model.predict(testX)
 prediction = prediction.argmax(axis=1)

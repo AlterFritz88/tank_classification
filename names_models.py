@@ -79,7 +79,7 @@ def fitter_modern():
     checpoint = ModelCheckpoint('models/modern_names.h5f', monitor='val_loss', save_best_only=True, verbose=1)
     callbacks = [checpoint]
     model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
-    model.fit(trainX, trainY, epochs=15, validation_data=(testX, testY), callbacks=callbacks)
+    model.fit(trainX, trainY, epochs=10, validation_data=(testX, testY), callbacks=callbacks)
 
     return load_model('models/modern_names.h5f'), vectorizer
 
@@ -152,7 +152,7 @@ def fitter_WWII():
     checpoint = ModelCheckpoint('models/WWII_names.h5f', monitor='val_loss', save_best_only=True, verbose=1)
     callbacks = [checpoint]
     model.compile(optimizer='adam', loss='categorical_crossentropy', metrics=['accuracy'])
-    model.fit(trainX, trainY, epochs=15, validation_data=(testX, testY), callbacks=callbacks)
+    model.fit(trainX, trainY, epochs=12, validation_data=(testX, testY), callbacks=callbacks)
 
     return load_model('models/WWII_names.h5f'), vectorizer
 
@@ -258,6 +258,6 @@ def fitter_age():
     callbacks = [checpoint]
 
     model.compile(optimizer='adam', loss='binary_crossentropy', metrics=['accuracy'])
-    model.fit(trainX, trainY, epochs=10, validation_data=(testX, testY), callbacks=callbacks)
+    model.fit(trainX, trainY, epochs=6, validation_data=(testX, testY), callbacks=callbacks)
 
     return load_model('models/age_names.h5f'), vectorizer
