@@ -11,6 +11,7 @@ image = np.expand_dims(image, axis=0)
 
 model = load_model('models/{0}_test.h5f'.format(dataset_path))
 
+
 labels_dict = {}
 with open('models/{0}_dict_labels'.format(dataset_path), 'r') as file:
     for line in file:

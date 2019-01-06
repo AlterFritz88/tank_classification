@@ -1,11 +1,13 @@
 import os
 from sklearn.cluster import KMeans
-from sklearn.feature_extraction.text import  TfidfVectorizer
+from sklearn.feature_extraction.text import  TfidfVectorizer, CountVectorizer
 import random as rd
 from keras.models import load_model
 import cv2
 from keras.preprocessing.image import img_to_array
 import numpy as np
+import matplotlib.pyplot as plt
+from kneed import KneeLocator
 
 '''
 кластеризует собранные данные по папкам и удаляет пустные
@@ -15,10 +17,35 @@ import numpy as np
 model = load_model('models/tankNotTank_test.h5f')
 li_dir = os.listdir(path="truck-link/sample")
 
-vectorizer = TfidfVectorizer()
+vectorizer = CountVectorizer()
 X = vectorizer.fit_transform(li_dir)
-kmeans = KMeans(n_clusters=2).fit(X)
+
+
+
+clustno = range(1, 10)
+
+# Run MiniBatch Kmeans over the number of clusters
+kmeans_more = [KMeans(n_clusters=i) for i in clustno]
+
+# Obtain the score for each model
+score = [kmeans_more[i].fit(X).score(X) for i in range(len(kmeans_more))]
+kn = KneeLocator(clustno, score, curve='convex', direction='increasing')
+
+print(kn.knee)
+
+# Plot the models and their respective score
+plt.plot(clustno, score)
+plt.xlabel('Number of Clusters')
+plt.ylabel('Score')
+plt.title('Elbow Curve')
+plt.show()
+
+
+kmeans = KMeans(n_clusters=kn.knee).fit(X)
 print(kmeans.labels_)
+
+
+
 
 dick_paths = {}
 for i in range(len(li_dir)):
@@ -47,7 +74,7 @@ for key, value in dick_paths.items():
 
                 sourse = 'truck-link/sample/' + value[i] + '/' + item
                 destin = temp_path + str(rd.randint(10,10000000)) + '.jpeg'
-                if os.stat(sourse).st_size < 25000 or list_of_pred[0] > 0.6:
+                if os.stat(sourse).st_size < 25000 or list_of_pred[0] > 0.4:
                     os.remove(sourse)
                 else:
                     os.rename(sourse,  destin)

@@ -5,7 +5,7 @@ import cv2
 import os
 from sklearn.model_selection import train_test_split
 from keras.utils import to_categorical
-from sklearn.metrics import classification_report
+from sklearn.metrics import classification_report, precision_score
 import matplotlib.pyplot as plt
 from keras.callbacks import ModelCheckpoint
 from keras.models import load_model
@@ -82,87 +82,95 @@ from keras.layers.convolutional import MaxPooling2D
 from keras.preprocessing.image import ImageDataGenerator
 from keras.layers.convolutional import Convolution2D, MaxPooling2D, ZeroPadding2D
 from keras.optimizers import SGD
-model = Sequential()
 
-model.add(Conv2D(16, (7, 7), padding="valid",
-			kernel_initializer="he_normal", kernel_regularizer=l2(0.0005),
-			input_shape=(64, 64, 3)))
+l2s = [0.0001, 0.00001, 0.00005, 0.000001, 0.0000001, 0.0000005]
+answers = []
+for l in l2s:
+    l2_regul = l
+    print(l2_regul)
+    model = Sequential()
 
-model.add(Conv2D(32, (3, 3), padding="same", kernel_initializer="he_normal", kernel_regularizer=l2(0.0005)))
-model.add(Activation("relu"))
-model.add(BatchNormalization(axis=-1))
-model.add(Conv2D(32, (3, 3), padding="same", kernel_initializer="he_normal", kernel_regularizer=l2(0.0005)))
-model.add(Activation("relu"))
-model.add(BatchNormalization(axis=-1))
-model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
-model.add(Dropout(0.25))
+    model.add(Conv2D(16, (7, 7), padding="valid",
+                kernel_initializer="he_normal", kernel_regularizer=l2(l2_regul),
+                input_shape=(64, 64, 3)))
 
-model.add(Conv2D(64, (3, 3), padding="same", kernel_initializer="he_normal", kernel_regularizer=l2(0.0005)))
-model.add(Activation("relu"))
-model.add(BatchNormalization(axis=-1))
-model.add(Conv2D(64, (3, 3), padding="same", kernel_initializer="he_normal", kernel_regularizer=l2(0.0005)))
-model.add(Activation("relu"))
-model.add(BatchNormalization(axis=-1))
-model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
-model.add(Dropout(0.25))
+    model.add(Conv2D(32, (3, 3), padding="same", kernel_initializer="he_normal", kernel_regularizer=l2(l2_regul)))
+    model.add(Activation("relu"))
+    model.add(BatchNormalization(axis=-1))
+    model.add(Conv2D(32, (3, 3), padding="same", kernel_initializer="he_normal", kernel_regularizer=l2(l2_regul)))
+    model.add(Activation("relu"))
+    model.add(BatchNormalization(axis=-1))
+    model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
+    model.add(Dropout(0.25))
 
-
-model.add(Conv2D(128, (3, 3), padding="same", kernel_initializer="he_normal", kernel_regularizer=l2(0.0005))) # без этого 0.75
-model.add(Activation("relu"))
-model.add(BatchNormalization(axis=-1))
-model.add(Conv2D(128, (3, 3), padding="same", kernel_initializer="he_normal", kernel_regularizer=l2(0.0005)))
-model.add(Activation("relu"))
-model.add(BatchNormalization(axis=-1))
-model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
-model.add(Dropout(0.25))
-
-'''
-model.add(Conv2D(128, (3, 3), strides=(2, 2), padding="same", kernel_initializer="he_normal", kernel_regularizer=l2(0.0005)))
-model.add(Activation("relu"))
-model.add(BatchNormalization(axis=-1))
-model.add(Conv2D(128, (3, 3), strides=(2, 2), padding="same", kernel_initializer="he_normal", kernel_regularizer=l2(0.0005)))
-model.add(Activation("relu"))
-model.add(BatchNormalization(axis=-1))
-model.add(Dropout(0.25))
-'''
-
-model.add(Flatten())
-model.add(Dense(512, kernel_initializer="he_normal"))
-model.add(Activation("relu"))
-model.add(BatchNormalization())
-model.add(Dropout(0.5))
+    model.add(Conv2D(64, (3, 3), padding="same", kernel_initializer="he_normal", kernel_regularizer=l2(l2_regul)))
+    model.add(Activation("relu"))
+    model.add(BatchNormalization(axis=-1))
+    model.add(Conv2D(64, (3, 3), padding="same", kernel_initializer="he_normal", kernel_regularizer=l2(l2_regul)))
+    model.add(Activation("relu"))
+    model.add(BatchNormalization(axis=-1))
+    model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
+    model.add(Dropout(0.25))
 
 
+    model.add(Conv2D(128, (3, 3), padding="same", kernel_initializer="he_normal", kernel_regularizer=l2(l2_regul))) # без этого 0.75
+    model.add(Activation("relu"))
+    model.add(BatchNormalization(axis=-1))
+    model.add(Conv2D(128, (3, 3), padding="same", kernel_initializer="he_normal", kernel_regularizer=l2(l2_regul)))
+    model.add(Activation("relu"))
+    model.add(BatchNormalization(axis=-1))
+    model.add(MaxPooling2D(pool_size=(2, 2), strides=(2, 2)))
+    model.add(Dropout(0.25))
 
-# softmax classifier
-model.add(Dense(number_labels))
-model.add(Activation("softmax"))
+    '''
+    model.add(Conv2D(128, (3, 3), strides=(2, 2), padding="same", kernel_initializer="he_normal", kernel_regularizer=l2(0.0005)))
+    model.add(Activation("relu"))
+    model.add(BatchNormalization(axis=-1))
+    model.add(Conv2D(128, (3, 3), strides=(2, 2), padding="same", kernel_initializer="he_normal", kernel_regularizer=l2(0.0005)))
+    model.add(Activation("relu"))
+    model.add(BatchNormalization(axis=-1))
+    model.add(Dropout(0.25))
+    '''
 
-epochs = 40
-
-opt = SGD(lr=0.005, decay=0.005/epochs, momentum=0.9, nesterov=True) #decay=0.003/epochs
-checpoint = ModelCheckpoint('models/{0}_test.h5f'.format(dataset_path), monitor='val_loss', save_best_only=True, verbose=1)
-callbacks = [checpoint]
-model.compile(optimizer=opt, loss='binary_crossentropy', metrics=['accuracy']) #loss='categorical_crossentropy'
-
-aug = ImageDataGenerator(rotation_range=5, width_shift_range=[-0.1, 0, +0.1],
-	height_shift_range=[-0.1, 0, +0.1], shear_range=0.2, zoom_range=0.2,
-	horizontal_flip=True, fill_mode="constant")
+    model.add(Flatten())
+    model.add(Dense(512, kernel_initializer="he_normal", kernel_regularizer=l2(l2_regul)))
+    model.add(Activation("relu"))
+    model.add(BatchNormalization())
+    model.add(Dropout(0.5))
 
 
 
-#H = model.fit_generator(aug.flow(trainX, trainY, batch_size=128), validation_data=(testX, testY), steps_per_epoch=len(trainX) // 32, epochs=epochs, verbose=1, callbacks=callbacks, class_weight=classWeight)
+    # softmax classifier
+    model.add(Dense(number_labels))
+    model.add(Activation("softmax"))
 
-H = model.fit(trainX, trainY, epochs=epochs, validation_data=(testX, testY), verbose=1, batch_size=128, callbacks=callbacks, class_weight=classWeight)
-model = load_model('models/{0}_test.h5f'.format(dataset_path))
-#score, acc = model.evaluate(testX, testY, batch_size=164)
-#print(score, acc)
+    epochs = 35
 
-prediction = model.predict(testX)
-prediction = prediction.argmax(axis=1)
-print(classification_report(testY.argmax(axis=1), prediction, target_names=list_labels))
+    opt = SGD(lr=0.005, decay=0.005/epochs, momentum=0.9, nesterov=True) #decay=0.003/epochs
+    checpoint = ModelCheckpoint('models/{0}_test.h5f'.format(dataset_path), monitor='val_loss', save_best_only=True, verbose=1)
+    callbacks = [checpoint]
+    model.compile(optimizer=opt, loss='binary_crossentropy', metrics=['accuracy']) #loss='categorical_crossentropy'
+
+    aug = ImageDataGenerator(rotation_range=5, width_shift_range=[-0.1, 0, +0.1],
+        height_shift_range=[-0.1, 0, +0.1], shear_range=0.2, zoom_range=0.2,
+        horizontal_flip=True, fill_mode="constant")
+
+
+
+    #H = model.fit_generator(aug.flow(trainX, trainY, batch_size=128), validation_data=(testX, testY), steps_per_epoch=len(trainX) // 32, epochs=epochs, verbose=1, callbacks=callbacks, class_weight=classWeight)
+
+    H = model.fit(trainX, trainY, epochs=epochs, validation_data=(testX, testY), verbose=1, batch_size=128, callbacks=callbacks, class_weight=classWeight)
+    model = load_model('models/{0}_test.h5f'.format(dataset_path))
+    #score, acc = model.evaluate(testX, testY, batch_size=164)
+    #print(score, acc)
+
+    prediction = model.predict(testX)
+    prediction = prediction.argmax(axis=1)
+    print(classification_report(testY.argmax(axis=1), prediction, target_names=list_labels))
+    print(precision_score(testY.argmax(axis=1), prediction, average="weighted"))
+    answers.append((l2_regul, precision_score(testY.argmax(axis=1), prediction, average="weighted")))
 #model.save('model_tanks')
-
+print(answers)
 plt.style.use("ggplot")
 plt.figure()
 plt.plot(np.arange(0, epochs), H.history["loss"], label="train_loss")
@@ -183,6 +191,8 @@ print(len(y_preds))
 print(len(test_Y_nc))
 
 # Indices corresponding to test images which were mislabeled
+
+'''
 bad_test_idxs = np.where(testY!=y_preds)
 path_bad_img = 'bad_predict'
 for i in range(len(test_Y_nc)):
@@ -192,7 +202,7 @@ for i in range(len(test_Y_nc)):
         #imsave('{0}/{1}'.format(path_bad_img, i),  array_to_img(testX_nc[i]))
         img_s.save('{0}/{1}---{2}--{3}.png'.format(path_bad_img, list_labels[test_Y_nc[i]], list_labels[y_preds[i]], i ))
 
-
+'''
 
 
 
